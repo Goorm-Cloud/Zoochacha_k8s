@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: admin-service-pod
+  labels:
+    app: admin-service
+spec:
+  containers:
+    - name: admin-service
+      image: heoyeji/admin_service  
+      ports:
+        - containerPort: 5000
+      env:
+        - name: DB_USER
+          value: "root"
+        - name: DB_PASSWORD
+          value: ""
+        - name: DB_HOST
+          value: "mysql-read.db.svc.cluster.local"   
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_NAME
+          value: "zoochacha"
