@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mysql
+  namespace: zoochacha-db
 spec:
   selector:
     matchLabels:
@@ -17,7 +18,7 @@ spec:
       resources:
         requests:
           storage: 10Gi
-      storageClassName: "gp2"
+      storageClassName: "mysql-retain-sc"
   template:
     metadata:
       labels:
