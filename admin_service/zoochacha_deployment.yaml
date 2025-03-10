@@ -8,62 +8,24 @@ spec:
   selector:
     matchLabels:
       app: zoochacha-admin-service
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-  minReadySeconds: 5
-  revisionHistoryLimit: 10
   template:
     metadata:
       labels:
         app: zoochacha-admin-service
-      annotations:
-        kubernetes.io/change-cause: "Initial deployment"
     spec:
-      initContainers:
-      - name: zoochacha-db-init
-        image: postgres:15-alpine
-        command: ['sh', '-c', '
-          for i in $(seq 1 30); do
-            echo "Attempt $i: waiting for database..."
-            if pg_isready -h $DB_HOST -p 5432 -t 3; then
-              echo "Database is ready!"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Could not connect to database after 30 attempts"
-          exit 1
-        ']
-        env:
-        - name: DB_HOST
-          valueFrom:
-            secretKeyRef:
-              name: zoochacha-admin-db-secret
-              key: db_host
       containers:
       - name: zoochacha-admin-app
-        image: ${DOCKER_REGISTRY}/zoochacha-admin:${IMAGE_TAG}
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8001
-          name: http
-        # 헬스 체크 엔드포인트 구현 후 아래 주석을 해제하세요
-        # readinessProbe:
-        #   httpGet:
-        #     path: /health
-        #     port: http
-        #   initialDelaySeconds: 5
-        #   periodSeconds: 10
-        # livenessProbe:
-        #   httpGet:
-        #     path: /health
-        #     port: http
-        #   initialDelaySeconds: 15
-        #   periodSeconds: 20
         env:
+        - name: ECR_REGISTRY_ID
+          valueFrom:
+            secretKeyRef:
+              name: zoochacha-admin-registry-secret
+              key: registry_id
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: zoochacha-admin-registry-secret
+              key: region
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -83,4 +45,9 @@ spec:
           valueFrom:
             secretKeyRef:
               name: zoochacha-admin-db-secret
-              key: db_host 
+              key: db_host
+        image: ${ECR_REGISTRY_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/admin-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8001
+          name: http 
