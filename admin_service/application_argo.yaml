@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/Goorm-Cloud/Zoochacha_k8s.git
     targetRevision: HEAD
-    path: Zoochacha_k8s/admin_service
+    path: admin_service   
   destination:
     server: https://kubernetes.default.svc
     namespace: zoochacha
