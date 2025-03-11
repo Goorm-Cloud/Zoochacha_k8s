@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zoochacha-admin-deployment
+  namespace: zoochacha-admin
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: zoochacha-admin-service
+  template:
+    metadata:
+      labels:
+        app: zoochacha-admin-service
+    spec:
+      containers:
+      - name: zoochacha-admin-app
+        env:
+        - name: ECR_REGISTRY_ID
+          valueFrom:
+            secretKeyRef:
+              name: zoochacha-admin-registry-secret
+              key: registry_id
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: zoochacha-admin-registry-secret
+              key: region
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: zoochacha-admin-db-secret
+              key: db_password
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: zoochacha-admin-db-secret
+              key: db_user
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: zoochacha-admin-db-secret
+              key: db_name
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: zoochacha-admin-db-secret
+              key: db_host
+        image: ${ECR_REGISTRY_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/admin-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8001
+          name: http 
