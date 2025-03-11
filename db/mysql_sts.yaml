@@ -48,8 +48,8 @@ spec:
         volumeMounts:
         - name: conf
           mountPath: /mnt/conf.d
-        - name: config-map
-          mountPath: /mnt/config-map
+        - name: config-map_service
+          mountPath: /mnt/config-map_service
       - name: clone-mysql
         image: gcr.io/google-samples/xtrabackup:1.0
         command:
@@ -165,7 +165,7 @@ spec:
       volumes:
       - name: conf
         emptyDir: {}
-      - name: config-map
+      - name: config-map_service
         configMap:
           name: mysql
 

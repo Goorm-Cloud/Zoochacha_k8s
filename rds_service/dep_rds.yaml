@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rds-server
+  namespace: zoochacha-rds
+spec:
+  replicas: 1  # 서버는 확장 가능하도록 설정
+  selector:
+    matchLabels:
+      app: rds-server
+  template:
+    metadata:
+      labels:
+        app: rds-server
+    spec:
+      containers:
+        - name: rds-server
+          image: 651706756261.dkr.ecr.ap-northeast-2.amazonaws.com/zoochacha_rds:latest
+          imagePullPolicy: Always
+          env:
+            - name: DB_HOST
+              value: "mysql.zoochacha-db.svc.cluster.local"   # db 서비스(ClusterIP) 앤드포인트
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: "zoochacha"
+            - name: DB_USER
+              value: "root"
+            - name: DB_PASSWORD
+              value: ""
+          ports:
+            - containerPort: 8004
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rds-server
+  namespace: zoochacha-rds
+spec:
+  selector:
+    app: rds-server
+  ports:
+    - protocol: TCP
+      port: 8004
+      targetPort: 8004
+  type: ClusterIP
