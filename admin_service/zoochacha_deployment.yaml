@@ -46,7 +46,7 @@ spec:
             secretKeyRef:
               name: zoochacha-admin-db-secret
               key: db_host
-        image: ${ECR_REGISTRY_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/admin-service:latest
+        image: 651706756261.dkr.ecr.ap-northeast-2.amazonaws.com/admin-service:latest 
         imagePullPolicy: Always
         ports:
         - containerPort: 8001
