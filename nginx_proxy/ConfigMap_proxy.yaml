@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nginx-config
-  namespace: zoochacha-proxy
+  namespace: zoochacha
 data:
   nginx.conf: |
     worker_processes auto;
@@ -14,65 +14,52 @@ data:
         default_type application/octet-stream;
 
         upstream flask_admin_service {
-            server admin-server.zinucha.svc.cluster.local:8001;
+            server admin-server.zoochacha.svc.cluster.local:8001;
         }
 
         upstream map_service {
-            server map-server.zinucha.svc.cluster.local:8002;
+            server map-server.zoochacha.svc.cluster.local:8002;
         }
 
-        upstream zoochacha_service {
-            server zoochacha-server.zinucha.svc.cluster.local:8003;
+        upstream reservation_service {
+            server reservation-server.zoochacha.svc.cluster.local:8003;
         }
 
         upstream reservation_detail_service {
-            server rds-server.zinucha.svc.cluster.local:8004;
+            server rds-server.zoochacha.svc.cluster.local:8004;
         }
 
         server {
             listen 80;
 
-            # 메인 페이지
+            # 메인 페이지 (지도 서비스)
             location / {
                 proxy_pass http://map_service;
-                proxy_redirect off;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_set_header Accept-Encoding "";
                 proxy_buffering off;
             }
 
             # 주차장 관련 API (예약 페이지)
             location /parking-lot {
-                proxy_pass http://zoochacha_service;
+                proxy_pass http://reservation_service;
                 proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_set_header Accept-Encoding "";
-                proxy_buffering off;
             }
 
             location ~ ^/parking-lot/(\d+)$ {
-                proxy_pass http://zoochacha_service;
+                proxy_pass http://reservation_service;
             }
 
             location ~ ^/reservation/(\d+)/reserve$ {
-                proxy_pass http://zoochacha_service;
+                proxy_pass http://reservation_service;
             }
-
 
             # 예약 상세 페이지 (reservation_detail_service)
             location ~ ^/reservation-detail/(\d+)$ {
                 proxy_pass http://reservation_detail_service;
                 proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_set_header Accept-Encoding "";
-                proxy_buffering off;
             }
 
             # 예약 상세 API 엔드포인트
@@ -90,6 +77,7 @@ data:
                 proxy_pass http://reservation_detail_service;
             }
 
+            # 관리자 페이지 (Admin Service)
             location /admin {
                 proxy_pass http://flask_admin_service;
             }
@@ -122,10 +110,9 @@ data:
                 proxy_pass http://flask_admin_service;
             }
 
-            # 정적 파일 처리
+            # 정적 파일 처리 (지도 서비스)
             location /static/ {
                 proxy_pass http://map_service;
-                proxy_redirect off;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -136,17 +123,13 @@ data:
                 add_header Expires 0;
             }
 
+            # 정적 파일 처리 (예약 서비스)
             location /reservation/static/ {
-                proxy_pass http://zoochacha_service;
+                proxy_pass http://reservation_service;
                 proxy_redirect off;
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                expires -1;
-                add_header Cache-Control "no-cache, no-store, must-revalidate";
-                add_header Pragma "no-cache";
-                add_header Expires 0;
+                root /usr/share/nginx/html/reservation_static/;
+                autoindex on;
+                expires 7d;
             }
         }
     }
