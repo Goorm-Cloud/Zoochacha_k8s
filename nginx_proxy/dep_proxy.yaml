@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx-proxy
-  namespace: zoochacha-proxy
+  namespace: zoochacha
   labels:
     app: nginx-proxy
 spec:
@@ -21,22 +21,32 @@ spec:
           image: nginx:latest
           ports:
             - containerPort: 80
+            - containerPort: 443
           volumeMounts:
-            - name: config-volume
+            - name: nginx-config
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
+            - name: nginx-tls
+              mountPath: /etc/nginx/ssl
       volumes:
-        - name: config-volume
+        - name: nginx-config
           configMap:
             name: nginx-config
+        - name: nginx-tls
+          secret:
+            secretName: nginx-tls
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: nginx-loadbalancer
-  namespace: zoochacha-proxy
+  namespace: zoochacha
   annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"  # 프록시 서버 엔드포인트를 AWS NLB로 생성
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
   labels:
     app: nginx-proxy
 spec:
@@ -47,3 +57,8 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
+      name: http
+    - protocol: TCP
+      port: 443
+      targetPort: 443  # 443 포트로 들어오는 트래픽을 nginx의 443 포트로 전달
+      name: https
