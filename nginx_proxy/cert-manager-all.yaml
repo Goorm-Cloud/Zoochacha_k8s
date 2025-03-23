@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-manager-route53
+  namespace: cert-manager
+  annotations:
+    eks.amazonaws.com/role-arn: ${AWS_ROLE_ARN}
+---
+# Route53 credentials secret은 별도로 관리
+# 아래 명령어로 생성:
+# kubectl create secret generic route53-credentials -n zoochacha \
+#   --from-literal=secret-access-key=${AWS_SECRET_ACCESS_KEY}
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: acm-issuer
+spec:
+  acme:
+    email: ${CERT_MANAGER_EMAIL}
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: acm-account-key
+    solvers:
+    - dns01:
+        route53:
+          region: ap-northeast-2
+          accessKeyID: ${AWS_ACCESS_KEY_ID}
+          secretAccessKeySecretRef:
+            name: route53-credentials
+            key: secret-access-key
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: zoochacha-cert
+  namespace: zoochacha
+spec:
+  secretName: nginx-tls
+  issuerRef:
+    name: acm-issuer
+    kind: ClusterIssuer
+  dnsNames:
+  - "${DOMAIN_NAME}"
+  - "www.${DOMAIN_NAME}" 
